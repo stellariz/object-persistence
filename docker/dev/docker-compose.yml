@@ -1,0 +1,15 @@
+services:
+  postgres:
+    container_name: pg_orm
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres:
