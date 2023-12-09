@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DefaultEntityMetaDataManagerTest {
 
     private static final String TABLE_NAME = "table_name";
-    private EntityMetaDataManager uut = new DefaultEntityMetaDataManager();
+    private final EntityMetaDataManager uut = new DefaultEntityMetaDataManager();
 
     @ParameterizedTest
     @MethodSource("testClassProvider")

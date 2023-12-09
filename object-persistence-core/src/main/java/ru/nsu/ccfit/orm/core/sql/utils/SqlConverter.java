@@ -23,7 +23,7 @@ public class SqlConverter {
         this.entityMetaDataManager = entityMetaDataManager;
     }
 
-    public void fillPreparedStatement(PreparedStatement preparedStatement, List<Object> params)
+    public void fillPreparedStatement(PreparedStatement preparedStatement, List<?> params)
             throws SQLException {
         for (int i = 0; i < params.size(); i++) {
             Object value = params.get(i);
@@ -36,16 +36,16 @@ public class SqlConverter {
         }
     }
 
-    public <T> T resultSetToObject(ResultSet rs, Class<T> clazz) {
+    public <T> T resultSetToObject(ResultSet rs, Class<?> clazz) {
         try {
-            return resultSetToObject(rs, clazz, clazz.getDeclaredConstructor().newInstance());
+            return resultSetToObject(rs, clazz, (T)clazz.getDeclaredConstructor().newInstance());
         } catch (Exception e) {
             LOGGER.error("Error during initialization new instance of clazz : %s".formatted(clazz.getName()));
             throw new IllegalArgumentException(e);
         }
     }
 
-    private <T> T resultSetToObject(ResultSet rs, Class<T> clazz, T instance) {
+    private <T> T resultSetToObject(ResultSet rs, Class<?> clazz, T instance) {
         Optional<TableMetaData> metaData = entityMetaDataManager.getMetaData(clazz);
         TableMetaData tableMetaData = metaData
                 .orElseThrow(() -> new IllegalArgumentException(

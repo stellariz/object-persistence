@@ -14,11 +14,11 @@ import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 import ru.nsu.ccfit.orm.model.utils.FieldInfo;
 import ru.nsu.ccfit.orm.model.utils.IdRowData;
 
-public class DefaultEntityMetaDataManager<T> implements EntityMetaDataManager<T> {
-    private final Map<Class<T>, TableMetaData> metaDataTable = new HashMap<>();
+public class DefaultEntityMetaDataManager implements EntityMetaDataManager {
+    private final Map<Class<?>, TableMetaData> metaDataTable = new HashMap<>();
 
     @Override
-    public TableMetaData unsafeGetMetaData(Class<T> clazz) {
+    public TableMetaData unsafeGetMetaData(Class<?> clazz) {
         if (!metaDataTable.containsKey(clazz)) {
             throw new IllegalArgumentException("There is no metadata for Class: %s".formatted(clazz.getName()));
         }
@@ -35,7 +35,7 @@ public class DefaultEntityMetaDataManager<T> implements EntityMetaDataManager<T>
     }
 
     @Override
-    public TableMetaData saveMetaData(Class<T> clazz) {
+    public TableMetaData saveMetaData(Class<?> clazz) {
         if (!clazz.isAnnotationPresent(Entity.class)) {
             throw new IllegalArgumentException("Class %s has no @Entity annotation".formatted(clazz.getName()));
         }
@@ -45,7 +45,7 @@ public class DefaultEntityMetaDataManager<T> implements EntityMetaDataManager<T>
     }
 
 
-    private TableMetaData collectMetaDataFromClass(Class<T> clazz) {
+    private TableMetaData collectMetaDataFromClass(Class<?> clazz) {
         if (!FieldUtilsManager.isOnlyOneIdField(clazz)) {
             throw new IllegalArgumentException("Entity should have only one @Id field");
         }
