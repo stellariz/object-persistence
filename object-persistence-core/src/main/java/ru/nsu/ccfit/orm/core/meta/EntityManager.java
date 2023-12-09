@@ -14,7 +14,9 @@ public interface EntityManager<T> {
 
     T create(T object);
 
-    boolean update(T object);
+    T update(T object);
 
     boolean delete(T object);
+
+    void createTableForClass(Class<?> clazz);
 }
