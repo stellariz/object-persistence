@@ -8,9 +8,9 @@ import java.util.List;
  * @param <T>
  */
 public interface EntityManager<T> {
-    T findById(Class<T> objectClass, Object key);
+    T findById(Class<?> objectClass, Object key);
 
-    List<T> findAll(Class<T> objectClass);
+    List<T> findAll(Class<?> objectClass);
 
     T create(T object);
 

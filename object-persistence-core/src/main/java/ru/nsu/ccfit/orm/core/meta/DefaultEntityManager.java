@@ -20,12 +20,12 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEntityManager.class);
     // TODO: 05.12.2023 (r.popov): replace to DAO
     private DataSource dataSource;
-    private final EntityMetaDataManager<T> entityMetaDataManager = new DefaultEntityMetaDataManager<>();
+    private final EntityMetaDataManager entityMetaDataManager = new DefaultEntityMetaDataManager();
     private final SqlConverter sqlConverter = new SqlConverter(entityMetaDataManager);
 
 
     @Override
-    public T findById(Class<T> objectClass, Object key) {
+    public T findById(Class<?> objectClass, Object key) {
         Optional<TableMetaData> metaData = entityMetaDataManager.getMetaData(objectClass);
         TableMetaData tableMetaData =
                 metaData.orElseThrow(() -> new IllegalArgumentException(
@@ -45,7 +45,7 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
     }
 
     @Override
-    public List<T> findAll(Class<T> objectClass) {
+    public List<T> findAll(Class<?> objectClass) {
         // TODO: 05.12.2023 (r.popov): использовать sql query builder
         String sqlQuery = null;
         return findAll(objectClass, sqlQuery, Collections.emptyList());
@@ -79,7 +79,7 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
 
             try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    return findById((Class<T>) object.getClass(), generatedKeys.getObject("scope_identity()"));
+                    return findById(object.getClass(), generatedKeys.getObject("scope_identity()"));
                 } else {
                     throw new IllegalArgumentException("Nothing to create");
                 }
@@ -147,7 +147,7 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
         return false;
     }
 
-    private List<T> findAll(Class<T> clazz, String sqlQuery, List<Object> params) {
+    private List<T> findAll(Class<?> clazz, String sqlQuery, List<?> params) {
         List<T> result = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery)) {
