@@ -1,18 +1,20 @@
 package ru.nsu.ccfit.orm.core.meta;
 
-import java.util.Map;
-import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import ru.nsu.ccfit.orm.core.sql.query.QueryTestUtils;
 import ru.nsu.ccfit.orm.model.annotations.Entity;
 import ru.nsu.ccfit.orm.model.annotations.Id;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
-import ru.nsu.ccfit.orm.model.utils.FieldInfo;
 import ru.nsu.ccfit.orm.model.utils.IdRowData;
+
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static ru.nsu.ccfit.orm.core.sql.query.QueryTestUtils.createFieldInfo;
 
 
 class DefaultEntityMetaDataManagerTest {
@@ -46,17 +48,13 @@ class DefaultEntityMetaDataManagerTest {
     private static TableMetaData getExpectedTableMetaDataForSave() throws NoSuchFieldException, NoSuchMethodException {
         return new TableMetaData(TABLE_NAME,
                 new IdRowData(
-                        "var2", new FieldInfo(TestClassEntityWithOneIdField.class.getDeclaredField("var2"),
-                        TestClassEntityWithOneIdField.class.getDeclaredMethod("getVar2"),
-                        TestClassEntityWithOneIdField.class.getDeclaredMethod("setVar2", int.class))
+                        "var2", createFieldInfo(TestClassEntityWithOneIdField.class, "var2", int.class)
                 ),
-                Map.of("var1", new FieldInfo(TestClassEntityWithOneIdField.class.getDeclaredField("var1"),
-                                TestClassEntityWithOneIdField.class.getDeclaredMethod("getVar1"),
-                                TestClassEntityWithOneIdField.class.getDeclaredMethod("setVar1", String.class)),
-                        "var2", new FieldInfo(TestClassEntityWithOneIdField.class.getDeclaredField("var2"),
-                                TestClassEntityWithOneIdField.class.getDeclaredMethod("getVar2"),
-                                TestClassEntityWithOneIdField.class.getDeclaredMethod("setVar2", int.class))
-                ));
+                Map.of(
+                        "var1", createFieldInfo(TestClassEntityWithOneIdField.class, "var1", String.class),
+                        "var2", createFieldInfo(TestClassEntityWithOneIdField.class, "var2", int.class)
+                )
+        );
     }
 
 

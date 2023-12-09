@@ -1,38 +1,41 @@
 package ru.nsu.ccfit.orm.core.meta;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import com.google.inject.Inject;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.nsu.ccfit.orm.core.sql.query.QueryBuilder;
+import ru.nsu.ccfit.orm.core.sql.query.QueryUtils;
+import ru.nsu.ccfit.orm.core.sql.utils.SqlConverter;
+import ru.nsu.ccfit.orm.model.meta.TableMetaData;
+
+import javax.sql.DataSource;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.nsu.ccfit.orm.core.sql.utils.SqlConverter;
-import ru.nsu.ccfit.orm.core.utils.FieldUtilsManager;
-import ru.nsu.ccfit.orm.model.meta.TableMetaData;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static ru.nsu.ccfit.orm.core.utils.FieldUtilsManager.getFieldValue;
+
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({@Inject}))
 public class DefaultEntityManager<T> implements EntityManager<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEntityManager.class);
-    // TODO: 05.12.2023 (r.popov): replace to DAO
-    private DataSource dataSource;
-    private final EntityMetaDataManager entityMetaDataManager = new DefaultEntityMetaDataManager();
-    private final SqlConverter sqlConverter = new SqlConverter(entityMetaDataManager);
 
+    private final DataSource dataSource;
+    private final EntityMetaDataManager entityMetaDataManager;
+    private final SqlConverter sqlConverter;
+    private final QueryBuilder queryBuilder;
 
     @Override
     public T findById(Class<?> objectClass, Object key) {
-        Optional<TableMetaData> metaData = entityMetaDataManager.getMetaData(objectClass);
-        TableMetaData tableMetaData =
-                metaData.orElseThrow(() -> new IllegalArgumentException(
-                        "There is no entity with class : %s".formatted(objectClass.getName()))
-                );
-        // TODO: 05.12.2023 (r.popov): использовать sql query builder (абстрактная фабрика?)
-        String sqlQuery = null;
+        TableMetaData tableMetaData = getTableMetaDataByObject(objectClass);
+
+        // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
+        String sqlQuery = QueryUtils.buildFindByIdQuery(tableMetaData);
+
         List<T> searchResult = findAll(objectClass, sqlQuery, List.of(key));
         if (searchResult.isEmpty()) {
             LOGGER.info("There is no entity of %s with id %s".formatted(objectClass.getName(), key));
@@ -46,40 +49,38 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
 
     @Override
     public List<T> findAll(Class<?> objectClass) {
-        // TODO: 05.12.2023 (r.popov): использовать sql query builder
-        String sqlQuery = null;
+        TableMetaData tableMetaData = getTableMetaDataByObject(objectClass);
+
+        // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
+        String sqlQuery = QueryUtils.buildFindAllSimpleQuery(tableMetaData);
+
         return findAll(objectClass, sqlQuery, Collections.emptyList());
     }
 
     @Override
     public T create(T object) {
-        Optional<TableMetaData> metaData = entityMetaDataManager.getMetaData(object.getClass());
-        TableMetaData tableMetaData =
-                metaData.orElseThrow(() -> new IllegalArgumentException(
-                        "There is no entity with class : %s".formatted(object.getClass().getName()))
-                );
-
-        List<Object> values = new ArrayList<>();
+        TableMetaData tableMetaData = getTableMetaDataByObject(object.getClass());
 
         // TODO: 05.12.2023 (r.popov): добавить логику ManyToOne, OneToMany
-        for (var entry : tableMetaData.rowsData().entrySet()) {
-            values.add(FieldUtilsManager.getFieldValue(entry.getValue(), object));
-        }
+        //  (сейчас всё линейно, работаем с примитивами и их оболочками)
+        Set<String> parameters = tableMetaData.rowsData().keySet();
+        List<Object> values = tableMetaData.rowsData().values().stream()
+                .map(value -> getFieldValue(value, object))
+                .collect(Collectors.toList());
 
-
-        // TODO: 05.12.2023 (r.popov): использовать sql query builder
-        String sqlQuery = null;
+        // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
+        String sqlQuery = QueryUtils.buildInsertQuery(tableMetaData, parameters);
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery, Statement.RETURN_GENERATED_KEYS)) {
-
             sqlConverter.fillPreparedStatement(preparedStatement, values);
-            preparedStatement.executeUpdate();
+
             LOGGER.debug("Executing sql query: \"{}\"", sqlQuery);
+            preparedStatement.executeUpdate();
 
             try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    return findById(object.getClass(), generatedKeys.getObject("scope_identity()"));
+                    return findById(object.getClass(), generatedKeys.getObject(1));
                 } else {
                     throw new IllegalArgumentException("Nothing to create");
                 }
@@ -90,52 +91,56 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
     }
 
     @Override
-    public boolean update(T object) {
-        Optional<TableMetaData> metaData = entityMetaDataManager.getMetaData(object.getClass());
-        TableMetaData tableMetaData =
-                metaData.orElseThrow(() -> new IllegalArgumentException(
-                        "There is no entity with class : %s".formatted(object.getClass().getName()))
-                );
+    public T update(T object) {
+        TableMetaData tableMetaData = getTableMetaDataByObject(object.getClass());
 
-        List<Object> values = new ArrayList<>();
+        Set<String> parameters = tableMetaData.rowsData().keySet();
+        List<Object> values = tableMetaData.rowsData().values().stream()
+                .map(value -> getFieldValue(value, object))
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        for (var entry : tableMetaData.rowsData().entrySet()) {
-            values.add(FieldUtilsManager.getFieldValue(entry.getValue(), object));
-        }
+        // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
+        String sqlQuery = QueryUtils.buildUpdateQuery(tableMetaData, parameters);
 
-        // TODO: 05.12.2023 (r.popov): использовать sql query builder
-        String sqlQuery = null;
         // TODO: 05.12.2023 (r.popov): добавить логику ManyToOne, OneToMany
         if (tableMetaData.idRowData() != null) {
             try (Connection connection = dataSource.getConnection();
-                 PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery)) {
+                 PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery, Statement.RETURN_GENERATED_KEYS)) {
+                values.add(tableMetaData.idRowData().fieldInfo().getter().invoke(object));
+
                 sqlConverter.fillPreparedStatement(preparedStatement, values);
-                if (preparedStatement.executeUpdate() != 0) {
-                    LOGGER.debug("Executing sql query: \"{}\"", sqlQuery);
-                    return true;
+                LOGGER.debug("Executing sql query: \"{}\"", sqlQuery);
+                preparedStatement.executeUpdate();
+
+                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        return findById(object.getClass(), generatedKeys.getObject(1));
+                    } else {
+                        throw new IllegalArgumentException("Nothing to create");
+                    }
                 }
-            } catch (SQLException e) {
+
+            } catch (Exception e) {
                 throw new IllegalArgumentException(e);
             }
         }
-        return false;
+        return null;
     }
 
     @Override
     public boolean delete(T object) {
-        Optional<TableMetaData> tableInfo = entityMetaDataManager.getMetaData(object.getClass());
-        TableMetaData tableMetaData =
-                tableInfo.orElseThrow(() -> new IllegalArgumentException(
-                        "There is no entity with class : %s".formatted(object.getClass().getName()))
-                );
-        // TODO: 05.12.2023 (r.popov): использовать sql query builder
-        String sqlQuery = null;
+        TableMetaData tableMetaData = getTableMetaDataByObject(object.getClass());
+
+        // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
+        String sqlQuery = QueryUtils.buildDeleteQuery(tableMetaData);
+
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery)) {
             if (tableMetaData.idRowData() != null) {
-                preparedStatement.setObject(1, tableMetaData.idRowData().fieldInfo().getter().invoke(object));
+                var id = tableMetaData.idRowData().fieldInfo().getter().invoke(object);
+                sqlConverter.fillPreparedStatement(preparedStatement, List.of(id));
+                LOGGER.debug("Executing sql query: \"{}\"", sqlQuery);
                 if (preparedStatement.executeUpdate() != 0) {
-                    LOGGER.debug("Executing sql query: \"{}\"", sqlQuery);
                     return true;
                 }
             }
@@ -162,5 +167,27 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
             throw new IllegalArgumentException(e);
         }
         return result;
+    }
+
+    @Override
+    public void createTableForClass(Class<?> clazz) {
+        TableMetaData tableMetaData = entityMetaDataManager.getMetaData(clazz)
+                .orElse(entityMetaDataManager.saveMetaData(clazz));
+
+        String createTableQuery = queryBuilder.buildSqlCreateTableQuery(tableMetaData);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(createTableQuery)) {
+            LOGGER.debug("Executing sql query: \"{}\"", createTableQuery);
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private TableMetaData getTableMetaDataByObject(Class<?> clazz) {
+        return entityMetaDataManager.getMetaData(clazz)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "There is no entity with class : %s".formatted(clazz.getName()))
+                );
     }
 }
