@@ -12,6 +12,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.nsu.ccfit.orm.core.sql.query.QuerySave;
 import ru.nsu.ccfit.orm.core.sql.utils.SqlConverter;
 import ru.nsu.ccfit.orm.core.utils.FieldUtilsManager;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
@@ -20,9 +21,13 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEntityManager.class);
     // TODO: 05.12.2023 (r.popov): replace to DAO
     private DataSource dataSource;
-    private final EntityMetaDataManager<T> entityMetaDataManager = new DefaultEntityMetaDataManager<>();
-    private final SqlConverter sqlConverter = new SqlConverter(entityMetaDataManager);
+    private final EntityMetaDataManager<T> entityMetaDataManager;
+    private final SqlConverter sqlConverter;
 
+    public DefaultEntityManager(EntityMetaDataManager<T> entityMetaDataManager) {
+        this.entityMetaDataManager = entityMetaDataManager;
+        this.sqlConverter = new SqlConverter(entityMetaDataManager);
+    }
 
     @Override
     public T findById(Class<T> objectClass, Object key) {
@@ -70,23 +75,25 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
         // TODO: 05.12.2023 (r.popov): использовать sql query builder
         String sqlQuery = null;
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery, Statement.RETURN_GENERATED_KEYS)) {
-
-            sqlConverter.fillPreparedStatement(preparedStatement, values);
-            preparedStatement.executeUpdate();
-            LOGGER.debug("Executing sql query: \"{}\"", sqlQuery);
-
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return findById((Class<T>) object.getClass(), generatedKeys.getObject("scope_identity()"));
-                } else {
-                    throw new IllegalArgumentException("Nothing to create");
-                }
-            }
-        } catch (SQLException e) {
-            throw new IllegalArgumentException(e);
-        }
+        long tmp = QuerySave.insert(values, tableMetaData);
+        return findById((Class<T>) object.getClass(), tmp);
+//        try (Connection connection = dataSource.getConnection();
+//             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery, Statement.RETURN_GENERATED_KEYS)) {
+//
+//            sqlConverter.fillPreparedStatement(preparedStatement, values);
+//            preparedStatement.executeUpdate();
+//            LOGGER.debug("Executing sql query: \"{}\"", sqlQuery);
+//
+//            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+//                if (generatedKeys.next()) {
+//                    return findById((Class<T>) object.getClass(), generatedKeys.getObject("scope_identity()"));
+//                } else {
+//                    throw new IllegalArgumentException("Nothing to create");
+//                }
+//            }
+//        } catch (SQLException e) {
+//            throw new IllegalArgumentException(e);
+//        }
     }
 
     @Override

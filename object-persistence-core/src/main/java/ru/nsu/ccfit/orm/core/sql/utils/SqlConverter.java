@@ -23,7 +23,7 @@ public class SqlConverter {
         this.entityMetaDataManager = entityMetaDataManager;
     }
 
-    public void fillPreparedStatement(PreparedStatement preparedStatement, List<Object> params)
+    public static void fillPreparedStatement(PreparedStatement preparedStatement, List<Object> params)
             throws SQLException {
         for (int i = 0; i < params.size(); i++) {
             Object value = params.get(i);
