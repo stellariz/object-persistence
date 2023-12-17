@@ -8,6 +8,7 @@ import ru.nsu.ccfit.orm.model.utils.IdRowData;
 
 /**
  * Класс, содержащий метаданные о сущностях
+ * Maps must be linked
  */
 public record TableMetaData(AtomicLong counter,
                             String tableName,

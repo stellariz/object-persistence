@@ -1,6 +1,7 @@
-package ru.nsu.ccfit.orm.core.meta;
+package ru.nsu.ccfit.orm.core.meta.manager;
 
 import lombok.RequiredArgsConstructor;
+import ru.nsu.ccfit.orm.core.meta.TableMetaDataBuilder;
 import ru.nsu.ccfit.orm.core.utils.FieldUtilsManager;
 import ru.nsu.ccfit.orm.model.annotations.Entity;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
@@ -19,6 +20,7 @@ public class DefaultEntityMetaDataManager implements EntityMetaDataManager {
         if (!metaDataTable.containsKey(clazz)) {
             throw new IllegalArgumentException("There is no metadata for Class: %s".formatted(clazz.getName()));
         }
+
         return metaDataTable.get(clazz);
     }
 
@@ -38,6 +40,7 @@ public class DefaultEntityMetaDataManager implements EntityMetaDataManager {
         }
         TableMetaData tableMetaData = collectMetaDataFromClass(clazz);
         metaDataTable.put(clazz, tableMetaData);
+
         return tableMetaData;
     }
 
@@ -45,6 +48,8 @@ public class DefaultEntityMetaDataManager implements EntityMetaDataManager {
         if (!FieldUtilsManager.isOnlyOneIdField(clazz)) {
             throw new IllegalArgumentException("Entity should have only one @Id field");
         }
+
         return tableMetaDataBuilder.buildTableMetaDataByClass(clazz);
     }
+
 }

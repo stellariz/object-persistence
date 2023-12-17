@@ -1,4 +1,4 @@
-package ru.nsu.ccfit.orm.core.meta;
+package ru.nsu.ccfit.orm.core.meta.manager;
 
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 
