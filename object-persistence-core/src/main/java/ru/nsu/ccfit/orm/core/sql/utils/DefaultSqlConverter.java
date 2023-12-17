@@ -1,31 +1,104 @@
 package ru.nsu.ccfit.orm.core.sql.utils;
 
 import com.google.inject.Inject;
-import java.lang.reflect.InvocationTargetException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.nsu.ccfit.orm.core.meta.EntityManager;
-import ru.nsu.ccfit.orm.core.meta.EntityMetaDataManager;
+import ru.nsu.ccfit.orm.core.meta.manager.EntityManager;
+import ru.nsu.ccfit.orm.core.meta.manager.EntityMetaDataManager;
+import ru.nsu.ccfit.orm.core.sql.query.builder.DeleteBuilder;
+import ru.nsu.ccfit.orm.core.sql.query.builder.InsertBuilder;
+import ru.nsu.ccfit.orm.core.sql.query.builder.SelectBuilder;
+import ru.nsu.ccfit.orm.core.sql.query.builder.UpdateBuilder;
+import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionFactory;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 import ru.nsu.ccfit.orm.model.utils.FieldInfo;
 import ru.nsu.ccfit.orm.model.utils.IdRowData;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.*;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({@Inject}))
 public class DefaultSqlConverter implements SqlConverter {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSqlConverter.class);
     private final EntityMetaDataManager entityMetaDataManager;
     private final EntityManager entityManager;
+
+    @Override
+    public PreparedStatement prepareUpdateStatement(
+            TableMetaData tableMetaData, Map<String, Object> columnsWithValues, Connection connection
+    ) throws SQLException {
+        var tableAlias = tableMetaData.tableName().charAt(0);
+        var tableNameEncoding = "%s %s".formatted(tableMetaData.tableName(), tableAlias);
+
+        var idColumnName = tableMetaData.idRowData().idFieldName();
+        var idColumnValue = columnsWithValues.get(idColumnName);
+        var idColumnEncoding = "{%s}%s".formatted(tableAlias, idColumnName);
+
+        var updateSet = new HashMap<>(columnsWithValues);
+        updateSet.remove(idColumnName);
+
+        return UpdateBuilder.createUpdate()
+                .table(tableNameEncoding)
+                .updateSet(updateSet)
+                .where(ConditionFactory.equals(idColumnEncoding, idColumnValue))
+                .returning(tableMetaData.idRowData().idFieldName())
+                .buildPreparedStatement(connection);
+    }
+
+    @Override
+    public PreparedStatement prepareInsertStatement(
+            TableMetaData tableMetaData, Map<String, Object> columnsWithValues, Connection connection
+    ) throws SQLException {
+        return InsertBuilder.createInsert()
+                .table(tableMetaData.tableName())
+                .insertSet(columnsWithValues)
+                .returning(tableMetaData.idRowData().idFieldName())
+                .buildPreparedStatement(connection);
+    }
+
+    @Override
+    public PreparedStatement prepareDeleteStatement(
+            TableMetaData tableMetaData, Map<String, Object> columnsWithValues, Connection connection
+    ) throws SQLException {
+        var tableAlias = tableMetaData.tableName().charAt(0);
+        var tableName = tableMetaData.tableName();
+        var idColumnName = tableMetaData.idRowData().idFieldName();
+        var tableNameEncoding = "%s %s".formatted(tableName, tableAlias);
+        var idColumnEncoding = "{%s}%s".formatted(tableAlias, idColumnName);
+        return DeleteBuilder.createDelete()
+                .from(tableNameEncoding)
+                .where(ConditionFactory.equals(idColumnEncoding, columnsWithValues.get(idColumnName)))
+                .buildPreparedStatement(connection);
+    }
+
+    @Override
+    public PreparedStatement prepareSelectByIdStatement(
+            TableMetaData tableMetaData, Map<String, Object> columnsWithValues, Connection connection
+    ) throws SQLException {
+        var tableAlias = tableMetaData.tableName().charAt(0);
+        var idColumnName = tableMetaData.idRowData().idFieldName();
+        var tableNameEncoding = "%s %s".formatted(tableMetaData.tableName(), tableAlias);
+        var idColumnEncoding = "{%s}%s".formatted(tableAlias, idColumnName);
+        return SelectBuilder.createSelect()
+                .selectAll()
+                .from(tableNameEncoding)
+                .where(ConditionFactory.equals(idColumnEncoding, columnsWithValues.get(idColumnName)))
+                .buildPreparedStatement(connection);
+    }
+
+    @Override
+    public PreparedStatement prepareSelectAllStatement(TableMetaData tableMetaData, Connection connection)
+            throws SQLException {
+        var tableNameEncoding = "%s %s".formatted(tableMetaData.tableName(), tableMetaData.tableName().charAt(0));
+        return SelectBuilder.createSelect()
+                .selectAll()
+                .from(tableNameEncoding)
+                .buildPreparedStatement(connection);
+    }
 
     public void fillPreparedStatement(PreparedStatement preparedStatement, List<?> params)
             throws SQLException {
@@ -57,14 +130,12 @@ public class DefaultSqlConverter implements SqlConverter {
                 );
         List<String> columnsList = getColumList(rs);
         IdRowData idRowData = tableMetaData.idRowData();
-        // TODO: 05.12.2023 (r.popov): добавить логику OneToMany, ManyToOne 
+
+        // TODO: 05.12.2023 (r.popov): добавить логику OneToMany, ManyToOne
         try {
             fillId(idRowData, instance, columnsList, rs);
-
             fillDefaultTypes(tableMetaData, instance, columnsList, rs);
-
             fillOneToOneRelationship(tableMetaData, instance, columnsList, rs);
-
         } catch (Exception e) {
             LOGGER.error("Error during filling the instance of clazz : %s".formatted(clazz.getName()));
             throw new IllegalArgumentException(e);

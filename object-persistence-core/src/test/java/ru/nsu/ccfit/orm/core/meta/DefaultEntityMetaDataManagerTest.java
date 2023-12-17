@@ -6,14 +6,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import ru.nsu.ccfit.orm.core.sql.query.QueryTestUtils;
+import ru.nsu.ccfit.orm.core.meta.manager.DefaultEntityMetaDataManager;
+import ru.nsu.ccfit.orm.core.meta.manager.EntityMetaDataManager;
 import ru.nsu.ccfit.orm.model.annotations.Entity;
 import ru.nsu.ccfit.orm.model.annotations.Id;
-import ru.nsu.ccfit.orm.model.annotations.OneToOne;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 import ru.nsu.ccfit.orm.model.utils.IdRowData;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

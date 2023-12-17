@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.nsu.ccfit.orm.core.configuration.EntityManagementModule;
-import ru.nsu.ccfit.orm.core.meta.EntityManager;
+import ru.nsu.ccfit.orm.core.meta.manager.EntityManager;
 import ru.nsu.ccfit.orm.model.annotations.Entity;
 import ru.nsu.ccfit.orm.model.annotations.Id;
 import ru.nsu.ccfit.orm.model.annotations.OneToOne;
@@ -22,14 +22,12 @@ public class Test {
 
     public static void main(String[] args) {
         Injector injector = Guice.createInjector(new EntityManagementModule());
-        EntityManager<TestClass> manager = injector.getInstance(EntityManager.class);
-        var objTestRelationShip = new TestOneToOneClass(2L, "OneToOneTest", 2);
-        manager.createTableForClass(TestOneToOneClass.class);
+        EntityManager manager = injector.getInstance(EntityManager.class);
 
-        var obj = new TestClass(4L, "TEST", 1, objTestRelationShip);
+        manager.createTableForClass(TestOneToOneClass.class);
         manager.createTableForClass(TestClass.class);
 
-        var createdObj = manager.create(obj);
+        var createdObj = manager.create(new TestClass(4L, "TEST", 1, new TestOneToOneClass(2L, "OneToOneTest", 2)));
         // check the counter element and related entity
         System.out.println(manager.findById(TestClass.class, 4));
         System.out.println(manager.findById(TestOneToOneClass.class, 2));
@@ -40,8 +38,9 @@ public class Test {
         // check the counter next element
         System.out.println(manager.findById(TestClass.class, 5));
 
-
-//        manager.delete(createdObj);
+        createdObj.getVar4().setVar2("OPANA");
+        createdObj.setVar2("OPA4ki");
+        System.out.println(manager.update(createdObj));
     }
 
     @Data
