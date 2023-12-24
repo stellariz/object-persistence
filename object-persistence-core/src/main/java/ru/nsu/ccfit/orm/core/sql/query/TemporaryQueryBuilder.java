@@ -1,5 +1,7 @@
 package ru.nsu.ccfit.orm.core.sql.query;
 
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 import ru.nsu.ccfit.orm.model.utils.FieldInfo;
 
@@ -19,15 +21,14 @@ public class TemporaryQueryBuilder implements QueryBuilder {
         var idField = tableMetaData.idRowData().fieldInfo();
         return new StringBuilder()
                 .append("CREATE TABLE IF NOT EXISTS %s ".formatted(tableMetaData.tableName()))
-                .append("(%s)".formatted(collectColumns(tableMetaData.rowsData(), idField)))
+                .append("(%s)".formatted(collectColumns(tableMetaData.allRowsData(), idField)))
                 .toString();
     }
 
     private String collectColumns(Map<String, FieldInfo> rowsData, FieldInfo idField) {
         return rowsData.entrySet().stream()
                 .map(entry -> getColumn(entry.getValue(), entry.getKey(), entry.getValue().equals(idField)))
-                .reduce(new StringBuilder(), (e1, e2) -> e1.append(", ").append(e2), StringBuilder::append)
-                .substring(2);
+                .collect(Collectors.joining(", "));
     }
 
     private String getColumn(FieldInfo fieldInfo, String fieldName, boolean isPrimaryKey) {
@@ -39,12 +40,11 @@ public class TemporaryQueryBuilder implements QueryBuilder {
             case "long", "Long", "BigInteger" -> "BIGINT";
             case "boolean", "Boolean", "bit" -> "BIT";
             case "Date" -> "DATE";
-            default -> throw new IllegalStateException(
-                    "Unexpected value: " + fieldInfo.field().getType().getSimpleName()
-            );
+            // TODO (r.popov): add handling relationship -> adding foreign keys
+            default -> "BIGINT";
         };
 
-        return "%s %s %s".formatted(fieldName, columnType, isPrimaryKey ? "PRIMARY KEY" : "");
+        return "%s %s%s".formatted(fieldName, columnType, isPrimaryKey ? " PRIMARY KEY" : StringUtils.EMPTY);
     }
 
 }

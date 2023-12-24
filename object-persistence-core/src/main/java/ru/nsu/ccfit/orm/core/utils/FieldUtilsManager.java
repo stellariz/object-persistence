@@ -21,6 +21,10 @@ public class FieldUtilsManager {
 
     public static Object getFieldValue(FieldInfo fieldInfo, Object instance) {
         try {
+            fieldInfo.field().setAccessible(true);
+            if (fieldInfo.field().get(instance) == null) {
+                return null;
+            }
             return fieldInfo.getter().invoke(instance);
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new IllegalArgumentException(e);

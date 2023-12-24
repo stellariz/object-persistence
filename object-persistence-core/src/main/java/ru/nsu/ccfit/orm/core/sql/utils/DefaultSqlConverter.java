@@ -1,10 +1,12 @@
 package ru.nsu.ccfit.orm.core.sql.utils;
 
 import com.google.inject.Inject;
+import java.lang.reflect.InvocationTargetException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.nsu.ccfit.orm.core.meta.EntityManager;
 import ru.nsu.ccfit.orm.core.meta.EntityMetaDataManager;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 import ru.nsu.ccfit.orm.model.utils.FieldInfo;
@@ -23,6 +25,7 @@ import java.util.Optional;
 public class DefaultSqlConverter implements SqlConverter {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSqlConverter.class);
     private final EntityMetaDataManager entityMetaDataManager;
+    private final EntityManager entityManager;
 
     public void fillPreparedStatement(PreparedStatement preparedStatement, List<?> params)
             throws SQLException {
@@ -56,15 +59,12 @@ public class DefaultSqlConverter implements SqlConverter {
         IdRowData idRowData = tableMetaData.idRowData();
         // TODO: 05.12.2023 (r.popov): добавить логику OneToMany, ManyToOne 
         try {
-            if (columnsList.contains(idRowData.idFieldName().toLowerCase())) {
-                idRowData.fieldInfo().setter().invoke(instance, rs.getObject(idRowData.idFieldName().toLowerCase()));
-            }
-            for (String baseRow : tableMetaData.rowsData().keySet()) {
-                FieldInfo fieldInfo = tableMetaData.rowsData().get(baseRow);
-                if (columnsList.contains(baseRow.toLowerCase())) {
-                    fieldInfo.setter().invoke(instance, rs.getObject(baseRow.toLowerCase()));
-                }
-            }
+            fillId(idRowData, instance, columnsList, rs);
+
+            fillDefaultTypes(tableMetaData, instance, columnsList, rs);
+
+            fillOneToOneRelationship(tableMetaData, instance, columnsList, rs);
+
         } catch (Exception e) {
             LOGGER.error("Error during filling the instance of clazz : %s".formatted(clazz.getName()));
             throw new IllegalArgumentException(e);
@@ -84,5 +84,33 @@ public class DefaultSqlConverter implements SqlConverter {
             throw new IllegalArgumentException(e);
         }
         return columnsList;
+    }
+
+    private void fillId(IdRowData idRowData, Object instance, List<String> columnsList, ResultSet rs)
+            throws SQLException, InvocationTargetException, IllegalAccessException {
+        if (columnsList.contains(idRowData.idFieldName().toLowerCase())) {
+            idRowData.fieldInfo().setter().invoke(instance, rs.getObject(idRowData.idFieldName().toLowerCase()));
+        }
+    }
+
+    private void fillDefaultTypes(TableMetaData tableMetaData, Object instance, List<String> columnsList, ResultSet rs)
+            throws SQLException, InvocationTargetException, IllegalAccessException {
+        for (String baseRow : tableMetaData.simpleRowsData().keySet()) {
+            FieldInfo fieldInfo = tableMetaData.simpleRowsData().get(baseRow);
+            if (columnsList.contains(baseRow.toLowerCase())) {
+                fieldInfo.setter().invoke(instance, rs.getObject(baseRow.toLowerCase()));
+            }
+        }
+    }
+
+    private void fillOneToOneRelationship(TableMetaData tableMetaData, Object instance, List<String> columnsList, ResultSet rs)
+            throws SQLException, InvocationTargetException, IllegalAccessException {
+        for (String complexRow : tableMetaData.oneToOneRowsData().keySet()) {
+            FieldInfo fieldInfo = tableMetaData.oneToOneRowsData().get(complexRow);
+            if (columnsList.contains(complexRow.toLowerCase()) && rs.getObject(complexRow.toLowerCase()) != null) {
+                fieldInfo.setter().invoke(instance, entityManager.findById(fieldInfo.getter().getReturnType(),
+                        rs.getObject(complexRow.toLowerCase())));
+            }
+        }
     }
 }

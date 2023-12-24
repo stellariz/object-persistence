@@ -63,7 +63,7 @@ class QueryUtilsTest {
         );
         var queryExpected = "UPDATE TEST_TABLE SET " +
                 "idField = ?, stringField = ?, intField = ?, bigDecimalField = ?, bigIntegerField = ?, doubleField = ? " +
-                "WHERE T.idField = ? " +
+                "WHERE idField = ? " +
                 "RETURNING idField";
 
         assertEquals(queryExpected, queryActual);

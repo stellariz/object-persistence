@@ -1,5 +1,7 @@
 package ru.nsu.ccfit.orm.core.sql.query;
 
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import ru.nsu.ccfit.orm.model.annotations.Entity;
@@ -41,6 +43,7 @@ public class QueryTestUtils {
         var booleanField = createFieldInfo(RichClass.class, "booleanField", boolean.class);
         var dateField = createFieldInfo(RichClass.class, "dateField", Date.class);
         return new TableMetaData(
+                new AtomicLong(0),
                 "TEST_TABLE",
                 new IdRowData("idField", idField),
                 new LinkedHashMap<>() {{
@@ -53,7 +56,18 @@ public class QueryTestUtils {
                     put("bigIntegerField", bigIntegerField);
                     put("booleanField", booleanField);
                     put("dateField", dateField);
-                }}
+                }},
+                new LinkedHashMap<>() {{
+                    put("stringField", stringField);
+                    put("intField", intField);
+                    put("doubleField", doubleField);
+                    put("floatField", floatField);
+                    put("bigDecimalField", bigDecimalField);
+                    put("bigIntegerField", bigIntegerField);
+                    put("booleanField", booleanField);
+                    put("dateField", dateField);
+                }},
+                Collections.emptyMap()
         );
     }
 
