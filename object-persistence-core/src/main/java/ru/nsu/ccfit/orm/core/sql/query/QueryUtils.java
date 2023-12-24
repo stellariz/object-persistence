@@ -1,5 +1,6 @@
 package ru.nsu.ccfit.orm.core.sql.query;
 
+import java.util.stream.Collectors;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 
 import java.util.Collection;
@@ -64,15 +65,13 @@ public class QueryUtils {
 
     private static String toStringInsertTuple(Collection<String> collection) {
         return collection.stream()
-                .reduce(new StringBuilder(), (e1, e2) -> e1.append(", ").append(e2), StringBuilder::append)
-                .substring(2);
+                .collect(Collectors.joining(", "));
     }
 
     private static String toStringUpdateTuple(Collection<String> collection) {
         return collection.stream()
                 .map("%s = ?"::formatted)
-                .reduce(new StringBuilder(), (e1, e2) -> e1.append(", ").append(e2), StringBuilder::append)
-                .substring(2);
+                .collect(Collectors.joining(", "));
     }
 
 }

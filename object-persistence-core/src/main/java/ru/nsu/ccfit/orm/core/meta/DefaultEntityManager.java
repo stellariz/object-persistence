@@ -1,6 +1,7 @@
 package ru.nsu.ccfit.orm.core.meta;
 
 import com.google.inject.Inject;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static ru.nsu.ccfit.orm.core.utils.FieldUtilsManager.getFieldValue;
 
@@ -26,6 +26,7 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
 
     private final DataSource dataSource;
     private final EntityMetaDataManager entityMetaDataManager;
+    private final ValuesCollector valuesCollector;
     private final SqlConverter sqlConverter;
     private final QueryBuilder queryBuilder;
 
@@ -62,13 +63,23 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
         TableMetaData tableMetaData = getTableMetaDataByObject(object.getClass());
 
         // TODO: 05.12.2023 (r.popov): добавить логику ManyToOne, OneToMany
-        //  (сейчас всё линейно, работаем с примитивами и их оболочками)
-        Set<String> parameters = tableMetaData.rowsData().keySet();
-        List<Object> values = tableMetaData.rowsData().values().stream()
-                .map(value -> getFieldValue(value, object))
-                .collect(Collectors.toList());
+
+        Map<TableMetaData, Object> oneToOneObjects = valuesCollector.collectOneToOneValues(tableMetaData, object);
 
         // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
+        for (var entry : oneToOneObjects.entrySet()) {
+            create(entry.getKey(), entry.getKey().getAllRowsName(), entry.getValue());
+        }
+
+        return create(tableMetaData, tableMetaData.getAllRowsName(), object);
+    }
+
+    private T create(TableMetaData tableMetaData, Set<String> parameters, Object object) {
+        if (object == null) {
+            return null;
+        }
+        List<Object> values = valuesCollector.collectAllValues(tableMetaData, object);
+
         String sqlQuery = QueryUtils.buildInsertQuery(tableMetaData, parameters);
 
         try (Connection connection = dataSource.getConnection();
@@ -94,10 +105,10 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
     public T update(T object) {
         TableMetaData tableMetaData = getTableMetaDataByObject(object.getClass());
 
-        Set<String> parameters = tableMetaData.rowsData().keySet();
-        List<Object> values = tableMetaData.rowsData().values().stream()
+        Set<String> parameters = tableMetaData.simpleRowsData().keySet();
+        List<Object> values = tableMetaData.simpleRowsData().values().stream()
                 .map(value -> getFieldValue(value, object))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .toList();
 
         // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
         String sqlQuery = QueryUtils.buildUpdateQuery(tableMetaData, parameters);
@@ -131,6 +142,16 @@ public class DefaultEntityManager<T> implements EntityManager<T> {
     public boolean delete(T object) {
         TableMetaData tableMetaData = getTableMetaDataByObject(object.getClass());
 
+        Map<TableMetaData, Object> oneToOneObjects = valuesCollector.collectOneToOneValues(tableMetaData, object);
+
+        for (var entry : oneToOneObjects.entrySet()) {
+            delete(entry.getKey(), entry.getValue());
+        }
+
+        return delete(tableMetaData, object);
+    }
+
+    private boolean delete(TableMetaData tableMetaData, Object object) {
         // TODO: 10.12.2023 (r.yatmanov): Переделать на sql query builder (абстрактная фабрика?)
         String sqlQuery = QueryUtils.buildDeleteQuery(tableMetaData);
 

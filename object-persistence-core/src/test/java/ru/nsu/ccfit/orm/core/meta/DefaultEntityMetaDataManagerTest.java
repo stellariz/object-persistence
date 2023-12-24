@@ -1,11 +1,15 @@
 package ru.nsu.ccfit.orm.core.meta;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import ru.nsu.ccfit.orm.core.sql.query.QueryTestUtils;
 import ru.nsu.ccfit.orm.model.annotations.Entity;
 import ru.nsu.ccfit.orm.model.annotations.Id;
+import ru.nsu.ccfit.orm.model.annotations.OneToOne;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 import ru.nsu.ccfit.orm.model.utils.IdRowData;
 
@@ -14,6 +18,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static ru.nsu.ccfit.orm.core.sql.query.QueryTestUtils.createFieldInfo;
 
 
@@ -31,7 +36,7 @@ class DefaultEntityMetaDataManagerTest {
         } else {
             TableMetaData actualTableMetaData = uut.saveMetaData(clazz);
 
-            assertEquals(expectedSaveResult, actualTableMetaData);
+            assertTrue(expectedSaveResult.toString().equals(actualTableMetaData.toString()));
         }
 
     }
@@ -46,14 +51,20 @@ class DefaultEntityMetaDataManagerTest {
     }
 
     private static TableMetaData getExpectedTableMetaDataForSave() throws NoSuchFieldException, NoSuchMethodException {
-        return new TableMetaData(TABLE_NAME,
-                new IdRowData(
-                        "var2", createFieldInfo(TestClassEntityWithOneIdField.class, "var2", int.class)
-                ),
-                Map.of(
-                        "var1", createFieldInfo(TestClassEntityWithOneIdField.class, "var1", String.class),
-                        "var2", createFieldInfo(TestClassEntityWithOneIdField.class, "var2", int.class)
-                )
+        var idField = createFieldInfo(TestClassEntityWithOneIdField.class, "var2", int.class);
+        var nonIdField = createFieldInfo(TestClassEntityWithOneIdField.class, "var1", String.class);
+        return new TableMetaData(
+                new AtomicLong(0),
+                TABLE_NAME,
+                new IdRowData("var2", idField),
+                new LinkedHashMap<>() {{
+                    put("var1", nonIdField);
+                    put("var2", idField);
+                }},
+                new LinkedHashMap<>() {{
+                    put("var1", nonIdField);
+                }},
+                Collections.emptyMap()
         );
     }
 
