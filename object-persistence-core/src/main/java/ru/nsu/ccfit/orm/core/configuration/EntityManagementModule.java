@@ -3,7 +3,7 @@ package ru.nsu.ccfit.orm.core.configuration;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import org.postgresql.ds.PGSimpleDataSource;
-import ru.nsu.ccfit.orm.core.dao.BasicEntityOperationsProvider;
+import ru.nsu.ccfit.orm.core.dao.DefaultEntityOperationsProvider;
 import ru.nsu.ccfit.orm.core.dao.EntityOperationsProvider;
 import ru.nsu.ccfit.orm.core.meta.manager.BasicValuesCollector;
 import ru.nsu.ccfit.orm.core.meta.manager.ValuesCollector;

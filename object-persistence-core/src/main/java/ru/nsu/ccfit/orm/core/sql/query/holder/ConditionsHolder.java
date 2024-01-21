@@ -1,36 +1,32 @@
 package ru.nsu.ccfit.orm.core.sql.query.holder;
 
-import org.apache.commons.collections4.CollectionUtils;
+import lombok.Setter;
 import ru.nsu.ccfit.orm.core.sql.query.common.SQLBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.common.ValuesProvider;
-import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionGroup;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionSignature;
 
 import java.util.List;
+import java.util.Objects;
 
 import static ru.nsu.ccfit.orm.core.sql.query.builder.BuilderUtils.clearExtraSpaces;
 
+@Setter
 public class ConditionsHolder implements SQLBuilder, ValuesProvider {
-
-    private ConditionGroup baseConditionGroup = new ConditionGroup();
-
-    public void addCondition(ConditionSignature conditionSignature) {
-        baseConditionGroup.add(conditionSignature);
-        baseConditionGroup.generateMetadata();
-    }
-
+    
+    private ConditionSignature conditionSignature;
+    
     @Override
     public String buildSQL() {
-        return clearExtraSpaces("WHERE %s".formatted(baseConditionGroup.buildSQL()));
+        return clearExtraSpaces("WHERE %s".formatted(conditionSignature.buildSQL()));
     }
-
+    
     @Override
     public boolean shouldCreateSQL() {
-        return CollectionUtils.isNotEmpty(baseConditionGroup.getConnectedConditions());
+        return Objects.nonNull(conditionSignature);
     }
-
+    
     @Override
     public List<?> provideValues() {
-        return baseConditionGroup.provideValues();
+        return conditionSignature.provideValues();
     }
 }
