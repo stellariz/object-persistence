@@ -1,5 +1,7 @@
 package ru.nsu.ccfit.orm.core.sql.query.builder;
 
+import java.sql.Array;
+import java.sql.Connection;
 import ru.nsu.ccfit.orm.core.sql.query.common.SQLBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.common.ValuesProvider;
 import ru.nsu.ccfit.orm.core.sql.query.common.consts.KeyWord;
@@ -52,7 +54,7 @@ public class BuilderUtils {
         return dirtyString.replaceAll("\\s+", " ");
     }
 
-    public static void fillPreparedStatement(PreparedStatement preparedStatement, List<?> params)
+    public static void fillPreparedStatement(PreparedStatement preparedStatement, List<?> params, Connection connection)
             throws SQLException {
         for (int i = 0; i < params.size(); i++) {
             Object value = params.get(i);
@@ -60,6 +62,10 @@ public class BuilderUtils {
 
             switch (value) {
                 case Date date -> preparedStatement.setDate(parameterIndex, new java.sql.Date(date.getTime()));
+                case List<?> list -> {
+                    Array array = connection.createArrayOf("BIGINT", list.toArray());
+                    preparedStatement.setArray(parameterIndex, array);
+                }
                 case Object object -> preparedStatement.setObject(parameterIndex, object);
             }
         }

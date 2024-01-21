@@ -67,6 +67,8 @@ public class QueryTestUtils {
                     put("booleanField", booleanField);
                     put("dateField", dateField);
                 }},
+                Collections.emptyMap(),
+                Collections.emptyMap(),
                 Collections.emptyMap()
         );
     }

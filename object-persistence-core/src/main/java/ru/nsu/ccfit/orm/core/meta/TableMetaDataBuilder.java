@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import ru.nsu.ccfit.orm.core.meta.parser_field.AllFieldParser;
 import ru.nsu.ccfit.orm.core.meta.parser_field.FieldParser;
+import ru.nsu.ccfit.orm.core.meta.parser_field.ManyToOneFieldParser;
+import ru.nsu.ccfit.orm.core.meta.parser_field.OneToManyFieldParser;
 import ru.nsu.ccfit.orm.core.meta.parser_field.OneToOneFieldParser;
 import ru.nsu.ccfit.orm.core.meta.parser_field.ParseContext;
 import ru.nsu.ccfit.orm.core.meta.parser_field.SimpleFieldParser;
@@ -27,6 +29,8 @@ public class TableMetaDataBuilder {
         fieldParserList.add(new AllFieldParser());
         fieldParserList.add(new OneToOneFieldParser());
         fieldParserList.add(new SimpleFieldParser());
+        fieldParserList.add(new OneToManyFieldParser());
+        fieldParserList.add(new ManyToOneFieldParser());
     }
 
     public TableMetaData buildTableMetaDataByClass(Class<?> clazz) {
@@ -55,7 +59,16 @@ public class TableMetaDataBuilder {
         } catch (NoSuchFieldException | IntrospectionException e) {
             throw new IllegalArgumentException(e);
         }
-        return new TableMetaData(new AtomicLong(0), tableName, idRowData, parseContext.getAllRowsMap(),
-                parseContext.getSimpleFieldInfoMap(), parseContext.getOneToOneRelationshipMap());
+        
+        return TableMetaData.builder()
+                .counter(new AtomicLong(0))
+                .tableName(tableName)
+                .idRowData(idRowData)
+                .allRowsData(parseContext.getAllRowsMap())
+                .simpleRowsData(parseContext.getSimpleFieldInfoMap())
+                .oneToOneRowsData(parseContext.getOneToOneRelationshipMap())
+                .oneToManyRowsData(parseContext.getOneToManyRelationshipMap())
+                .manyToOneRowsData(parseContext.getManyToOneRelationshipMap())
+                .build();
     }
 }

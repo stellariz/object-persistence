@@ -3,7 +3,6 @@ package ru.nsu.ccfit.orm.core.sql.query.builder;
 import ru.nsu.ccfit.orm.core.sql.query.common.PreparedStatementBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.common.SQLBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.common.ValuesProvider;
-import ru.nsu.ccfit.orm.core.sql.query.common.consts.Symbol;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionSignature;
 import ru.nsu.ccfit.orm.core.sql.query.holder.ConditionsHolder;
 import ru.nsu.ccfit.orm.core.sql.query.holder.HolderType;
@@ -80,7 +79,7 @@ public class UpdateBuilder implements SQLBuilder, PreparedStatementBuilder, Valu
             var preparedStatement = rh.shouldCreateSQL() ?
                     connection.prepareStatement(buildSQL(), RETURN_GENERATED_KEYS) :
                     connection.prepareStatement(buildSQL());
-            fillPreparedStatement(preparedStatement, provideValues());
+            fillPreparedStatement(preparedStatement, provideValues(), connection);
             return preparedStatement;
         }
 

@@ -40,7 +40,7 @@ public class TemporaryQueryBuilder implements QueryBuilder {
             case "long", "Long", "BigInteger" -> "BIGINT";
             case "boolean", "Boolean", "bit" -> "BIT";
             case "Date" -> "DATE";
-            // TODO (r.popov): add handling relationship -> adding foreign keys
+            case "List" -> "bigint[]";
             default -> "BIGINT";
         };
 

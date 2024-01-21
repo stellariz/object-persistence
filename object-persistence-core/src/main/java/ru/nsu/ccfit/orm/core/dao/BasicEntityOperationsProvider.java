@@ -1,11 +1,12 @@
-package ru.nsu.ccfit.orm.core.meta.manager;
+package ru.nsu.ccfit.orm.core.dao;
 
 import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.nsu.ccfit.orm.core.meta.ValuesCollector;
+import ru.nsu.ccfit.orm.core.meta.manager.ValuesCollector;
+import ru.nsu.ccfit.orm.core.meta.manager.EntityMetaDataManager;
 import ru.nsu.ccfit.orm.core.sql.utils.SqlConverter;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 
@@ -87,6 +88,7 @@ public class BasicEntityOperationsProvider implements EntityOperationsProvider {
 
             if (searchResult.isEmpty()) {
                 LOGGER.info("There is no entity of %s with id %s".formatted(objectClass.getName(), key));
+                return null;
             } else if (searchResult.size() != 1) {
                 throw new IllegalArgumentException(
                         "Found two entities %s with id %s".formatted(objectClass.getName(), key)

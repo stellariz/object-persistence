@@ -69,7 +69,7 @@ public class DeleteBuilder implements SQLBuilder, PreparedStatementBuilder, Valu
     @Override
     public PreparedStatement buildPreparedStatement(Connection connection) throws SQLException {
         var preparedStatement = connection.prepareStatement(buildSQL());
-        fillPreparedStatement(preparedStatement, provideValues());
+        fillPreparedStatement(preparedStatement, provideValues(), connection);
         return preparedStatement;
     }
 

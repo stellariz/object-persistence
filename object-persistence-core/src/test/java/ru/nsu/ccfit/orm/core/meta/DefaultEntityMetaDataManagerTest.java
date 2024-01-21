@@ -63,6 +63,8 @@ class DefaultEntityMetaDataManagerTest {
                 new LinkedHashMap<>() {{
                     put("var1", nonIdField);
                 }},
+                Collections.emptyMap(),
+                Collections.emptyMap(),
                 Collections.emptyMap()
         );
     }
