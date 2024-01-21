@@ -1,7 +1,6 @@
 package ru.nsu.ccfit.orm.core.meta;
 
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.jupiter.api.AfterEach;
@@ -10,13 +9,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import ru.nsu.ccfit.orm.core.meta.manager.BasicValuesCollector;
 import ru.nsu.ccfit.orm.core.meta.manager.DefaultEntityMetaDataManager;
 import ru.nsu.ccfit.orm.model.annotations.Entity;
 import ru.nsu.ccfit.orm.model.annotations.Id;
 import ru.nsu.ccfit.orm.model.annotations.OneToOne;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BasicValuesCollectorTest {
 

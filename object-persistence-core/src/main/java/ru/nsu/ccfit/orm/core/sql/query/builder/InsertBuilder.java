@@ -71,7 +71,7 @@ public class InsertBuilder implements SQLBuilder, PreparedStatementBuilder, Valu
             var preparedStatement = rh.shouldCreateSQL() ?
                     connection.prepareStatement(buildSQL(), RETURN_GENERATED_KEYS) :
                     connection.prepareStatement(buildSQL());
-            fillPreparedStatement(preparedStatement, provideValues());
+            fillPreparedStatement(preparedStatement, provideValues(), connection);
             return preparedStatement;
         }
 

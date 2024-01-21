@@ -1,8 +1,18 @@
 package ru.nsu.ccfit.orm.core.sql.utils;
 
 import com.google.inject.Inject;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.nsu.ccfit.orm.core.meta.manager.EntityManager;
@@ -12,20 +22,34 @@ import ru.nsu.ccfit.orm.core.sql.query.builder.InsertBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.builder.SelectBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.builder.UpdateBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionFactory;
+import ru.nsu.ccfit.orm.core.sql.utils.fillers.DefaultTypesFiller;
+import ru.nsu.ccfit.orm.core.sql.utils.fillers.IdDataFiller;
+import ru.nsu.ccfit.orm.core.sql.utils.fillers.ManyToOneRelationshipFiller;
+import ru.nsu.ccfit.orm.core.sql.utils.fillers.ObjectFiller;
+import ru.nsu.ccfit.orm.core.sql.utils.fillers.OneToManyRelationshipFiller;
+import ru.nsu.ccfit.orm.core.sql.utils.fillers.OneToOneRelationshipFiller;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
-import ru.nsu.ccfit.orm.model.utils.FieldInfo;
-import ru.nsu.ccfit.orm.model.utils.IdRowData;
 
-import java.lang.reflect.InvocationTargetException;
-import java.sql.*;
-import java.util.Date;
-import java.util.*;
-
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({@Inject}))
 public class DefaultSqlConverter implements SqlConverter {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSqlConverter.class);
     private final EntityMetaDataManager entityMetaDataManager;
-    private final EntityManager entityManager;
+    private final List<ObjectFiller> objectFillers;
+
+    @Inject
+    private DefaultSqlConverter(EntityMetaDataManager entityMetaDataManager, EntityManager entityManager) {
+        this.entityMetaDataManager = entityMetaDataManager;
+        this.objectFillers = createFillers(entityManager);
+    }
+
+    private List<ObjectFiller> createFillers(EntityManager entityManager) {
+        return new LinkedList<>(List.of(
+                new IdDataFiller(),
+                new DefaultTypesFiller(),
+                new OneToOneRelationshipFiller(entityManager),
+                new OneToManyRelationshipFiller(entityManager),
+                new ManyToOneRelationshipFiller(entityManager)
+        ));
+    }
 
     @Override
     public PreparedStatement prepareUpdateStatement(
@@ -128,14 +152,12 @@ public class DefaultSqlConverter implements SqlConverter {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "There is no metadata for clazz : %s".formatted(clazz.getName()))
                 );
-        List<String> columnsList = getColumList(rs);
-        IdRowData idRowData = tableMetaData.idRowData();
+        List<String> columnsList = getColumnsList(rs);
 
-        // TODO: 05.12.2023 (r.popov): добавить логику OneToMany, ManyToOne
         try {
-            fillId(idRowData, instance, columnsList, rs);
-            fillDefaultTypes(tableMetaData, instance, columnsList, rs);
-            fillOneToOneRelationship(tableMetaData, instance, columnsList, rs);
+            for (var filler : objectFillers) {
+                filler.fillObject(tableMetaData, instance, columnsList, rs);
+            }
         } catch (Exception e) {
             LOGGER.error("Error during filling the instance of clazz : %s".formatted(clazz.getName()));
             throw new IllegalArgumentException(e);
@@ -143,7 +165,7 @@ public class DefaultSqlConverter implements SqlConverter {
         return instance;
     }
 
-    private List<String> getColumList(ResultSet rs) {
+    private List<String> getColumnsList(ResultSet rs) {
         List<String> columnsList = new ArrayList<>();
         try {
             ResultSetMetaData rsMetaData = rs.getMetaData();
@@ -155,33 +177,5 @@ public class DefaultSqlConverter implements SqlConverter {
             throw new IllegalArgumentException(e);
         }
         return columnsList;
-    }
-
-    private void fillId(IdRowData idRowData, Object instance, List<String> columnsList, ResultSet rs)
-            throws SQLException, InvocationTargetException, IllegalAccessException {
-        if (columnsList.contains(idRowData.idFieldName().toLowerCase())) {
-            idRowData.fieldInfo().setter().invoke(instance, rs.getObject(idRowData.idFieldName().toLowerCase()));
-        }
-    }
-
-    private void fillDefaultTypes(TableMetaData tableMetaData, Object instance, List<String> columnsList, ResultSet rs)
-            throws SQLException, InvocationTargetException, IllegalAccessException {
-        for (String baseRow : tableMetaData.simpleRowsData().keySet()) {
-            FieldInfo fieldInfo = tableMetaData.simpleRowsData().get(baseRow);
-            if (columnsList.contains(baseRow.toLowerCase())) {
-                fieldInfo.setter().invoke(instance, rs.getObject(baseRow.toLowerCase()));
-            }
-        }
-    }
-
-    private void fillOneToOneRelationship(TableMetaData tableMetaData, Object instance, List<String> columnsList, ResultSet rs)
-            throws SQLException, InvocationTargetException, IllegalAccessException {
-        for (String complexRow : tableMetaData.oneToOneRowsData().keySet()) {
-            FieldInfo fieldInfo = tableMetaData.oneToOneRowsData().get(complexRow);
-            if (columnsList.contains(complexRow.toLowerCase()) && rs.getObject(complexRow.toLowerCase()) != null) {
-                fieldInfo.setter().invoke(instance, entityManager.findById(fieldInfo.getter().getReturnType(),
-                        rs.getObject(complexRow.toLowerCase())));
-            }
-        }
     }
 }

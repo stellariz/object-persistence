@@ -14,5 +14,7 @@ public class ParseContext {
     private FieldInfo fieldInfo;
     private final Map<String, FieldInfo> simpleFieldInfoMap = new LinkedHashMap<>();
     private final Map<String, FieldInfo> oneToOneRelationshipMap = new LinkedHashMap<>();
+    private final Map<String, FieldInfo> oneToManyRelationshipMap = new LinkedHashMap<>();
+    private final Map<String, FieldInfo> manyToOneRelationshipMap = new LinkedHashMap<>();
     private final Map<String, FieldInfo> allRowsMap = new LinkedHashMap<>();
 }
