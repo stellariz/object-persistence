@@ -1,6 +1,7 @@
 package ru.nsu.ccfit.orm.core.meta;
 
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,8 @@ import ru.nsu.ccfit.orm.model.annotations.Entity;
 import ru.nsu.ccfit.orm.model.annotations.Id;
 import ru.nsu.ccfit.orm.model.annotations.OneToOne;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BasicValuesCollectorTest {
 
@@ -36,10 +39,9 @@ class BasicValuesCollectorTest {
         TableMetaData metaData = defaultEntityMetaDataManager.saveMetaData(TestOneToOneClass.class);
         TestOneToOneClass testClass = new TestOneToOneClass(0L, "", 0.0);
 
-//        List<Object> objects = uut.collectColumnAndValuesPairs(metaData, testClass);
-//
-//        var expectedValues = List.of(0L, "", 0.0);
-//        assertEquals(expectedValues, objects);
+        var actualRes = uut.collectColumnAndValuesPairs(metaData, testClass);
+
+        assertEquals(Map.of("var1", 0L, "var2", "", "var3", 0.0), actualRes);
     }
 
     @Test
@@ -47,26 +49,22 @@ class BasicValuesCollectorTest {
         TableMetaData metaData = defaultEntityMetaDataManager.saveMetaData(TestOneToOneClass.class);
         TestOneToOneClass testClass = new TestOneToOneClass(null, "", 0.0);
 
-//        List<Object> objects = uut.collectColumnAndValuesPairs(metaData, testClass);
-//
-//        var expectedValues = List.of(0L, "", 0.0);
-//        assertEquals(expectedValues, objects);
+        var actualRes = uut.collectColumnAndValuesPairs(metaData, testClass);
+
+        assertEquals(Map.of("var1", 1L, "var2", "", "var3", 0.0), actualRes);
     }
 
     @Test
     void testCollectValueWithOneToOne() {
-        TableMetaData metaData = defaultEntityMetaDataManager.saveMetaData(TestOneToOneClass.class);
+        defaultEntityMetaDataManager.saveMetaData(TestOneToOneClass.class);
         TableMetaData metaDataForMainEntity = defaultEntityMetaDataManager.saveMetaData(TestClass.class);
-        TestOneToOneClass testClass = new TestOneToOneClass(null, "", 0.0);
+        TestOneToOneClass testClass = new TestOneToOneClass(100L, "", 0.0);
         TestClass mainTestClass = new TestClass(null, "1", 1.0, testClass);
 
-//        List<Object> objects = uut.collectColumnAndValuesPairs(metaDataForMainEntity, mainTestClass);
-//
-//        var expectedValues = List.of(0L, "1", 1.0, 0L);
-//        assertEquals(expectedValues, objects);
+        var actualRes = uut.collectColumnAndValuesPairs(metaDataForMainEntity, mainTestClass);
+
+        assertEquals(Map.of("var1", 1L, "var2", "1", "var3", 1.0, "var4", 100L), actualRes);
     }
-
-
 
 
     @Data
