@@ -11,7 +11,8 @@ public enum Symbol {
     UNDERLINE("_"),
     PARENTHESES_OPEN("("),
     PARENTHESES_CLOSE(")"),
-    VARIABLE("?");
+    VARIABLE("?"),
+    ALL("*");
 
     private String symbol;
 

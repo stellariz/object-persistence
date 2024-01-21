@@ -1,7 +1,6 @@
 package ru.nsu.ccfit.orm.core.sql.query.holder;
 
 import ru.nsu.ccfit.orm.core.sql.query.common.SQLBuilder;
-import ru.nsu.ccfit.orm.core.sql.query.common.consts.KeyWord;
 import ru.nsu.ccfit.orm.core.sql.query.common.consts.Symbol;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.table.Table;
 

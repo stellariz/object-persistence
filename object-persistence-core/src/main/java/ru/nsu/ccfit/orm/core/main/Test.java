@@ -16,6 +16,11 @@ import ru.nsu.ccfit.orm.model.annotations.Id;
 import ru.nsu.ccfit.orm.model.annotations.ManyToOne;
 import ru.nsu.ccfit.orm.model.annotations.OneToMany;
 import ru.nsu.ccfit.orm.model.annotations.OneToOne;
+import ru.nsu.ccfit.orm.model.common.OrderType;
+
+import static ru.nsu.ccfit.orm.core.repository.dsl.selector.EntitySelector.*;
+import static ru.nsu.ccfit.orm.core.repository.dsl.selector.EntitySelector.equal;
+
 
 /**
  * Тестовый класс
@@ -63,9 +68,25 @@ public class Test {
         updatedClass.setVar4(thirdInnerTestClass);
         var updatedSecondaryClass = entityManager.update(updatedClass);
         test.info(entityManager.findById(TestClass.class, 4).toString());
+        
+        var res = entityManager.customSearch(TestClass.class)
+            .where(
+                and(
+                    equal("var3", 112.0),
+                    like("var2", "TEST5")
+//                    and(
+//                        equal("age", "22"),
+//                        equal("status", "student")
+//                    )
+                )
+            )
+            .limit(10)
+            .orderBy("var3", OrderType.DESCENDING)
+            .toList();
+        
+        res.forEach(System.out::println);
     }
-
-
+    
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

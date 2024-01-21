@@ -1,5 +1,7 @@
 package ru.nsu.ccfit.orm.core.meta.manager;
 
+import ru.nsu.ccfit.orm.core.repository.dsl.selector.EntitySelector;
+
 import java.util.List;
 
 /**
@@ -17,6 +19,8 @@ public interface EntityManager {
     <T> T update(T object);
 
     <T> boolean delete(T object);
+
+    <T> EntitySelector<? extends T> customSearch(Class<? extends T> objectClass);
 
     void createTableForClass(Class<?> clazz);
 }

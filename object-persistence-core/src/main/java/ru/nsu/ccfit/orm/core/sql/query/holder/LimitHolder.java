@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static ru.nsu.ccfit.orm.core.sql.query.builder.BuilderUtils.clearExtraSpaces;
-import static ru.nsu.ccfit.orm.core.sql.query.common.consts.KeyWord.VARIABLE;
 
 public class LimitHolder implements SQLBuilder, ValuesProvider {
     private Limit limit;
@@ -20,7 +19,7 @@ public class LimitHolder implements SQLBuilder, ValuesProvider {
 
     @Override
     public String buildSQL() {
-        return clearExtraSpaces("LIMIT %s".formatted(VARIABLE));
+        return clearExtraSpaces("LIMIT ?");
     }
 
     @Override

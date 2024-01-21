@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.nsu.ccfit.orm.core.dao.EntityOperationsProvider;
+import ru.nsu.ccfit.orm.core.repository.dsl.selector.EntitySelector;
 import ru.nsu.ccfit.orm.core.sql.query.QueryBuilder;
 import ru.nsu.ccfit.orm.model.meta.TableMetaData;
 
@@ -27,6 +28,7 @@ public class DefaultEntityManager implements EntityManager {
     private final EntityMetaDataManager entityMetaDataManager;
     private final QueryBuilder queryBuilder;
     private final EntityOperationsProvider entityOperationsProvider;
+    private final EntitySearchProvider entitySearchProvider;
 
     @Override
     public <T> T findById(Class<? extends T> objectClass, Object key) {
@@ -58,7 +60,6 @@ public class DefaultEntityManager implements EntityManager {
         return entityOperationsProvider.create(tableMetaData, object);
     }
 
-
     @Override
     public <T> boolean delete(T object) {
         if (object == null) {
@@ -76,6 +77,12 @@ public class DefaultEntityManager implements EntityManager {
         TableMetaData tableMetaData = entityMetaDataManager.unsafeGetMetaData(object.getClass());
         // TODO: check object's fields that were updated
         return entityOperationsProvider.update(tableMetaData, object);
+    }
+
+    @Override
+    public <T> EntitySelector<? extends T> customSearch(Class<? extends T> objectClass) {
+        TableMetaData tableMetaData = entityMetaDataManager.unsafeGetMetaData(objectClass);
+        return new EntitySelector<>(tableMetaData, entitySearchProvider, objectClass);
     }
 
     @Override

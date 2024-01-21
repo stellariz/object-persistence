@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -124,20 +123,19 @@ public class DefaultSqlConverter implements SqlConverter {
                 .buildPreparedStatement(connection);
     }
 
-    public void fillPreparedStatement(PreparedStatement preparedStatement, List<?> params)
-            throws SQLException {
-        for (int i = 0; i < params.size(); i++) {
-            Object value = params.get(i);
-            int parameterIndex = i + 1;
-            if (value instanceof Date date) {
-                preparedStatement.setDate(parameterIndex, new java.sql.Date(date.getTime()));
-            } else {
-                preparedStatement.setObject(parameterIndex, value);
+    public <T> List<T> extractEntitiesFromExecutedStatement(PreparedStatement returnableEntitiesStatement, Class<?> objectClass) {
+        List<T> result = new ArrayList<>();
+        try (ResultSet resultSet = returnableEntitiesStatement.executeQuery()) {
+            while (resultSet.next()) {
+                result.add(resultSetToObject(resultSet, objectClass));
             }
+        } catch (SQLException e) {
+            throw new IllegalArgumentException(e);
         }
+        return result;
     }
 
-    public <T> T resultSetToObject(ResultSet rs, Class<?> clazz) {
+    private <T> T resultSetToObject(ResultSet rs, Class<?> clazz) {
         try {
             return resultSetToObject(rs, clazz, (T) clazz.getDeclaredConstructor().newInstance());
         } catch (Exception e) {
