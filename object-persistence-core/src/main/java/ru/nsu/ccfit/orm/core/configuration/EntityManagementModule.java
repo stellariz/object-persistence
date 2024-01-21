@@ -23,7 +23,8 @@ public class EntityManagementModule extends AbstractModule {
         bind(QueryBuilder.class).to(TemporaryQueryBuilder.class).in(Singleton.class);
         bind(SqlConverter.class).to(DefaultSqlConverter.class).in(Singleton.class);
         bind(ValuesCollector.class).to(BasicValuesCollector.class).in(Singleton.class);
-        bind(EntityOperationsProvider.class).to(BasicEntityOperationsProvider.class).in(Singleton.class);
+        bind(EntityOperationsProvider.class).to(DefaultEntityOperationsProvider.class).in(Singleton.class);
+        bind(EntitySearchProvider.class).to(DefaultEntitySearchProvider.class).in(Singleton.class);
         bind(EntityManager.class).to(DefaultEntityManager.class).in(Singleton.class);
         bind(DataSource.class).toInstance(pgDataSource());
     }

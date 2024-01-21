@@ -5,7 +5,6 @@ import ru.nsu.ccfit.orm.core.sql.query.common.SQLBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.common.ValuesProvider;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionGroup;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionSignature;
-import ru.nsu.ccfit.orm.core.sql.query.common.consts.KeyWord;
 
 import java.util.List;
 

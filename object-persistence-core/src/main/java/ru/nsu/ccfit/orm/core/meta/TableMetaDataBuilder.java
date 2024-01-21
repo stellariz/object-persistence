@@ -23,7 +23,6 @@ import ru.nsu.ccfit.orm.model.utils.IdRowData;
 public class TableMetaDataBuilder {
 
     private final List<FieldParser> fieldParserList;
-
     {
         fieldParserList = new ArrayList<>();
         fieldParserList.add(new AllFieldParser());

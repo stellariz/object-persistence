@@ -14,16 +14,15 @@ import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({@Inject}))
-public class BasicEntityOperationsProvider implements EntityOperationsProvider {
+public class DefaultEntityOperationsProvider implements EntityOperationsProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BasicEntityOperationsProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEntityOperationsProvider.class);
     private final EntityMetaDataManager entityMetaDataManager;
     private final ValuesCollector valuesCollector;
     private final SqlConverter sqlConverter;
@@ -84,7 +83,7 @@ public class BasicEntityOperationsProvider implements EntityOperationsProvider {
 
         try (var connection = dataSource.getConnection();
              var selectByIdStatement = sqlConverter.prepareSelectByIdStatement(tableMetaData, columnsWithValues, connection)) {
-            List<T> searchResult = getEntities(selectByIdStatement, objectClass);
+            List<T> searchResult = sqlConverter.extractEntitiesFromExecutedStatement(selectByIdStatement, objectClass);
 
             if (searchResult.isEmpty()) {
                 LOGGER.info("There is no entity of %s with id %s".formatted(objectClass.getName(), key));
@@ -105,7 +104,7 @@ public class BasicEntityOperationsProvider implements EntityOperationsProvider {
     public <T> List<T> findByAll(TableMetaData tableMetaData, Class<?> objectClass) {
         try (var connection = dataSource.getConnection();
              var selectByIdStatement = sqlConverter.prepareSelectAllStatement(tableMetaData, connection)) {
-            return getEntities(selectByIdStatement, objectClass);
+            return sqlConverter.extractEntitiesFromExecutedStatement(selectByIdStatement, objectClass);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -122,18 +121,6 @@ public class BasicEntityOperationsProvider implements EntityOperationsProvider {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private <T> List<T> getEntities(PreparedStatement returnableEntitiesStatement, Class<?> objectClass) {
-        List<T> result = new ArrayList<>();
-        try (ResultSet resultSet = returnableEntitiesStatement.executeQuery()) {
-            while (resultSet.next()) {
-                result.add(sqlConverter.resultSetToObject(resultSet, objectClass));
-            }
-        } catch (SQLException e) {
-            throw new IllegalArgumentException(e);
-        }
-        return result;
     }
 
 }

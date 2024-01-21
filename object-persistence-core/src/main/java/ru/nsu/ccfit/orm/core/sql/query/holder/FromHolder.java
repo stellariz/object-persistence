@@ -2,7 +2,6 @@ package ru.nsu.ccfit.orm.core.sql.query.holder;
 
 import org.apache.commons.collections4.CollectionUtils;
 import ru.nsu.ccfit.orm.core.sql.query.common.SQLBuilder;
-import ru.nsu.ccfit.orm.core.sql.query.common.consts.KeyWord;
 import ru.nsu.ccfit.orm.core.sql.query.common.consts.Symbol;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.table.Table;
 

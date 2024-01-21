@@ -4,7 +4,6 @@ import java.sql.Array;
 import java.sql.Connection;
 import ru.nsu.ccfit.orm.core.sql.query.common.SQLBuilder;
 import ru.nsu.ccfit.orm.core.sql.query.common.ValuesProvider;
-import ru.nsu.ccfit.orm.core.sql.query.common.consts.KeyWord;
 import ru.nsu.ccfit.orm.core.sql.query.common.consts.Symbol;
 
 import java.sql.PreparedStatement;
@@ -32,7 +31,7 @@ public class BuilderUtils {
     }
 
     public static String enumerateVariablesWithSeparator(int size, String separator) {
-        return enumerateObjectsWithSeparator(Collections.nCopies(size, KeyWord.VARIABLE.getKeyword()), separator);
+        return enumerateObjectsWithSeparator(Collections.nCopies(size, Symbol.VARIABLE), separator);
     }
 
     public static List<?> extractAndLinkValues(SequencedCollection<?> valuesProviders) {
