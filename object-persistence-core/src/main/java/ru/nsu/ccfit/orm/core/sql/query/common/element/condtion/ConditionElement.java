@@ -27,8 +27,8 @@ public record ConditionElement(Column column, Comparison comparison, Object valu
     
     @Override
     public String buildSQL() {
-        return clearExtraSpaces("%s %s %s".formatted(
-            column.sqlRepresentation(), comparison.getValue(), getValueAsString()
+        return clearExtraSpaces("%s %s%s".formatted(
+            column.sqlRepresentation(), comparison.getValue(), value == null ? "" : " " + getValueAsString()
         ));
     }
     

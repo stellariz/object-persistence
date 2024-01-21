@@ -4,7 +4,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionFactory;
-import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionGroup;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionSignature;
 
 import java.util.List;
@@ -18,10 +17,8 @@ class ConditionGroupTest {
     @ParameterizedTest
     @MethodSource("basicOperations")
     public void testConditionGroup(ConditionSignature conditionSignature, String expectedSQL, List<?> expectedValues) {
-        var conditionGroup = new ConditionGroup();
-        conditionGroup.add(conditionSignature);
-        assertEquals(expectedSQL, conditionGroup.buildSQL());
-        assertEquals(expectedValues, conditionGroup.provideValues());
+        assertEquals(expectedSQL, conditionSignature.buildSQL());
+        assertEquals(expectedValues, conditionSignature.provideValues());
     }
 
     private static Stream<Arguments> basicOperations() {
@@ -30,8 +27,8 @@ class ConditionGroupTest {
                 Arguments.of(ConditionFactory.notEquals("{u}name", "TEST"), "u.name <> ?", List.of("TEST")),
                 Arguments.of(ConditionFactory.like("{u}name", "TEST"), "u.name LIKE ?", List.of("TEST")),
                 Arguments.of(ConditionFactory.notLike("{u}name", "TEST"), "u.name NOT LIKE ?", List.of("TEST")),
-                Arguments.of(ConditionFactory.isNull("{u}name"), "u.name IS NULL ", List.of()),
-                Arguments.of(ConditionFactory.isNotNull("{u}name"), "u.name IS NOT NULL ", List.of()),
+                Arguments.of(ConditionFactory.isNull("{u}name"), "u.name IS NULL", List.of()),
+                Arguments.of(ConditionFactory.isNotNull("{u}name"), "u.name IS NOT NULL", List.of()),
                 Arguments.of(ConditionFactory.greaterThan("{u}age", 18), "u.age > ?", List.of(18)),
                 Arguments.of(ConditionFactory.greaterThanOrEq("{u}age", 18), "u.age >= ?", List.of(18)),
                 Arguments.of(ConditionFactory.lessThan("{u}age", 18), "u.age < ?", List.of(18)),
@@ -43,9 +40,7 @@ class ConditionGroupTest {
     @ParameterizedTest
     @MethodSource("operationsCombinations")
     public void testConditionGroupComplex(ConditionSignature conditionSignature, String expected) {
-        var conditionGroup = new ConditionGroup();
-        conditionGroup.add(conditionSignature);
-//        assertEquals(expected, conditionGroup.buildSQL());
+        assertEquals(expected, conditionSignature.buildSQL());
     }
 
     private static Stream<Arguments> operationsCombinations() {
@@ -64,7 +59,7 @@ class ConditionGroupTest {
                                 ),
                                 ConditionFactory.isNotNull("{u}points")
                         ),
-                        "((u.name = 'TEST' AND u.age < 18) OR (u.nickname = 'NICK' AND u.age > 20)) AND (u.points IS NOT NULL)"
+                        "(((u.name = ? AND u.age < ?) OR (u.nickname = ? AND u.age > ?)) AND u.points IS NOT NULL)"
                 )
         );
     }

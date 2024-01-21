@@ -2,44 +2,25 @@ package ru.nsu.ccfit.orm.core.sql.query.common.element.condtion;
 
 import ru.nsu.ccfit.orm.core.sql.query.common.element.table.Column;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class ConditionFactory {
     
-    public static ConditionGroup and(List<ConditionSignature> conditions) {
-        ConditionGroup conditionGroup = new ConditionGroup();
-        for (var condition : conditions) {
-            conditionGroup.add(ConditionBinder.AND, condition);
-        }
-        conditionGroup.generateMetadata();
-        return conditionGroup;
+    public static ConditionsUnion and(List<ConditionSignature> conditions) {
+        return new ConditionsUnion(conditions, ConditionBinder.AND);
     }
     
-    public static ConditionGroup and(ConditionSignature... conditions) {
-        ConditionGroup conditionGroup = new ConditionGroup();
-        for (var condition : conditions) {
-            conditionGroup.add(ConditionBinder.AND, condition);
-        }
-        conditionGroup.generateMetadata();
-        return conditionGroup;
+    public static ConditionsUnion and(ConditionSignature... conditions) {
+        return new ConditionsUnion(Arrays.stream(conditions).toList(), ConditionBinder.AND);
     }
     
-    public static ConditionGroup or(List<ConditionSignature> conditions) {
-        ConditionGroup conditionGroup = new ConditionGroup();
-        for (var condition : conditions) {
-            conditionGroup.add(ConditionBinder.OR, condition);
-        }
-        conditionGroup.generateMetadata();
-        return conditionGroup;
+    public static ConditionsUnion or(List<ConditionSignature> conditions) {
+        return new ConditionsUnion(conditions, ConditionBinder.OR);
     }
     
-    public static ConditionGroup or(ConditionSignature... conditions) {
-        ConditionGroup conditionGroup = new ConditionGroup();
-        for (var condition : conditions) {
-            conditionGroup.add(ConditionBinder.OR, condition);
-        }
-        conditionGroup.generateMetadata();
-        return conditionGroup;
+    public static ConditionsUnion or(ConditionSignature... conditions) {
+        return new ConditionsUnion(Arrays.stream(conditions).toList(), ConditionBinder.OR);
     }
     
     public static ConditionSignature equals(String field, Object value) {

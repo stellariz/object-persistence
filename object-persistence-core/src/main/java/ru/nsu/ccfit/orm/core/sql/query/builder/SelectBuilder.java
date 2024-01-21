@@ -55,10 +55,10 @@ public class SelectBuilder implements SQLBuilder, PreparedStatementBuilder, Valu
         }
         return this;
     }
-
-    public SelectBuilder where(ConditionSignature... conditionSignatures) {
+    
+    public SelectBuilder where(ConditionSignature conditionSignature) {
         if (holders.get(HolderType.CONDITIONS_HOLDER) instanceof ConditionsHolder ch) {
-            Arrays.stream(conditionSignatures).forEach(ch::addCondition);
+            ch.setConditionSignature(conditionSignature);
         }
         return this;
     }

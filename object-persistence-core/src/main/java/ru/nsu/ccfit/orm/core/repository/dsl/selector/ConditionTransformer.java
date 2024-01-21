@@ -7,7 +7,6 @@ import ru.nsu.ccfit.orm.core.repository.dsl.condition.common.ConditionLinker;
 import ru.nsu.ccfit.orm.core.repository.dsl.condition.linker.AndLinker;
 import ru.nsu.ccfit.orm.core.repository.dsl.condition.linker.OrLinker;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionFactory;
-import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionGroup;
 import ru.nsu.ccfit.orm.core.sql.query.common.element.condtion.ConditionSignature;
 
 import java.util.List;
@@ -22,7 +21,7 @@ class ConditionTransformer {
         };
     }
     
-    private static ConditionGroup convertConditionLinker(ConditionLinker condition) {
+    private static ConditionSignature convertConditionLinker(ConditionLinker condition) {
         return switch (condition) {
             case AndLinker(List<Condition> conditions) -> ConditionFactory.and(
                 conditions.stream().map(ConditionTransformer::convertToConditionSignature).toList()

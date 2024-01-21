@@ -46,9 +46,9 @@ public class UpdateBuilder implements SQLBuilder, PreparedStatementBuilder, Valu
         return this;
     }
 
-    public UpdateBuilder where(ConditionSignature... conditionSignatures) {
+    public UpdateBuilder where(ConditionSignature conditionSignature) {
         if (holders.get(HolderType.CONDITIONS_HOLDER) instanceof ConditionsHolder ch) {
-            Arrays.stream(conditionSignatures).forEach(ch::addCondition);
+            ch.setConditionSignature(conditionSignature);
         }
         return this;
     }
